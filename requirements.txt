@@ -1,0 +1,11 @@
+playwright>=1.49
+pytest>=8.0
+pytest-playwright>=0.5
+pytest-html>=4.1
+sentence-transformers>=3.0
+scikit-learn>=1.5
+numpy>=1.26
+opencv-python-headless>=4.9
+scikit-image>=0.22
+ruff>=0.6
+
