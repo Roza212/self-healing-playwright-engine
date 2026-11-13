@@ -3,4 +3,6 @@ reports/
 __pycache__/
 .pytest_cache/
 .env
+CHANGELOG.md
+COMMANDS_USED.md
 
