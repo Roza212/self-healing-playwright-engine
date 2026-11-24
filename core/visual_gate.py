@@ -26,6 +26,8 @@ def verify_after_heal(
         "diff": res.diff_path,
         "occluded": occluded,
     }
+    if healer.audit is not None:
+        healer.audit.update(last_heal)
 
     if res.severity == "MAJOR" or occluded is True:
         raise AssertionError(
