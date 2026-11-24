@@ -56,17 +56,19 @@ def render(
             '\n      <div style="position:absolute;inset:0;background:rgba(0,0,0,.45)"></div>'
         )
 
+    body_attr = ' style="min-height:1600px"' if decoy_far else ""
+
     return f"""<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Acme Pay</title>
   </head>
-  <body style="min-height:1600px">
+  <body{body_attr}>
     <header>
       <h1>Acme Pay</h1>
     </header>
-    <main style="position:relative">
+    <main style="position:relative;min-height:400px">
       <form id="checkout">
         <h2>Payment</h2>
         <label for="card">Card number</label>

@@ -6,6 +6,8 @@ import pytest
 from playwright.sync_api import Page
 
 from core.healer import HealingRefused, SelfHealingLocator
+from core.vision_diff import shoot
+from core.visual_gate import verify_after_heal
 from mockbench.bench_app import MUTATIONS, render
 from pages.mock_pages import MockCheckoutPage
 
@@ -28,6 +30,7 @@ def test_mutation_bench(
     pg = MockCheckoutPage(page, healer)
     pg.load_html(render())
     assert pg.el(pg.SUBMIT).get_attribute("data-truth") == "submit"
+    baseline = shoot(page)
 
     pg.load_html(render(**kwargs))
     if expected == "heal":
@@ -38,6 +41,7 @@ def test_mutation_bench(
             raise
         assert healed_el.get_attribute("data-truth") == "submit"
         assert len(healer.heals) > 0
+        verify_after_heal(page, healer, baseline, name)
     else:
         with pytest.raises(HealingRefused):
             pg.el(pg.SUBMIT)
