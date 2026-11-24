@@ -1,0 +1,57 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install CPU torch and requirements
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Cache HuggingFace MiniLM model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-minilm-l6-v2
+
+      - name: Install Playwright Chromium
+        run: playwright install --with-deps chromium
+
+      - name: Lint with Ruff
+        run: ruff check .
+
+      - name: Run offline tests
+        run: pytest -m "not live" -q
+
+      - name: Check heal budget
+        run: python -m core.audit --dir reports/heal_events --budget 3
+
+      - name: Run benchmark
+        run: python -m benchmarks.run_benchmark --n 40 --seed 99
+
+      - name: Upload reports artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports/
