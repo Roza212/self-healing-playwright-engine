@@ -17,7 +17,7 @@ When a selector breaks, most "self-healing" tools pick the closest-looking eleme
 
 ![Overlay diff produced by the visual gate](docs/img/overlay_diff.png)
 
-*Visual gate output for a covered checkout form. Left: baseline. Centre: current page with changed regions boxed in red. Right: SSIM heat map.*
+_Visual gate output for a covered checkout form (`SSIM = 0.8105`, `MAJOR`). Left: baseline. Centre: current page with changed regions boxed in red. Right: rose-to-crimson SSIM difference map over the baseline wireframe._
 
 ## Contents
 
@@ -48,40 +48,40 @@ flowchart TD
     H3 --> V
 ```
 
-| Tier | What it does | Accepts only if | Event class |
-| --- | --- | --- | --- |
-| **T1** | Waits for the primary selector to be visible. On first success, stores a fingerprint (role, accessible name, text, bounding box, attribute tokens). | The primary selector resolves within `probe_timeout_ms`. | none |
-| **T2** | `page.get_by_role(role, name=..., exact=True)`. | Exactly one visible match that passes the hard gates. | `NATIVE_FALLBACK` |
-| **T3** | Extracts all interactive elements in one `page.evaluate` call and scores each one. | Passes hard gates, total score meets the threshold, and the lead over the runner-up meets the margin. | `LOCATOR_DRIFT_HEALED` |
-| **Refuse** | Raises `HealingRefused` (an `AssertionError`) carrying the top 3 candidates. | No candidate qualifies, or two are too close. | `ELEMENT_REMOVED` / `AMBIGUOUS` |
+| Tier       | What it does                                                                                                                                        | Accepts only if                                                                                       | Event class                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------- |
+| **T1**     | Waits for the primary selector to be visible. On first success, stores a fingerprint (role, accessible name, text, bounding box, attribute tokens). | The primary selector resolves within `probe_timeout_ms`.                                              | none                            |
+| **T2**     | `page.get_by_role(role, name=..., exact=True)`.                                                                                                     | Exactly one visible match that passes the hard gates.                                                 | `NATIVE_FALLBACK`               |
+| **T3**     | Extracts all interactive elements in one `page.evaluate` call and scores each one.                                                                  | Passes hard gates, total score meets the threshold, and the lead over the runner-up meets the margin. | `LOCATOR_DRIFT_HEALED`          |
+| **Refuse** | Raises `HealingRefused` (an `AssertionError`) carrying the top 3 candidates.                                                                        | No candidate qualifies, or two are too close.                                                         | `ELEMENT_REMOVED` / `AMBIGUOUS` |
 
 ### Hard gates (applied in T2 and T3)
 
-| Gate | Rejects a candidate when |
-| --- | --- |
-| `hidden` / `disabled` | It is not visible or not enabled. |
-| `role_mismatch` | Its role is incompatible (a button may heal to a link, never to a textbox). |
-| `opposite_action` | Its words sit in the same antonym group as the wanted words but share none (submit/cancel, add/remove, pay/refund, login/logout, and others). Embeddings rate these pairs as similar, so this is a lexical guard. |
-| `moved_far` | A fingerprint exists and the spatial score is below `0.10`. |
+| Gate                  | Rejects a candidate when                                                                                                                                                                                          |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hidden` / `disabled` | It is not visible or not enabled.                                                                                                                                                                                 |
+| `role_mismatch`       | Its role is incompatible (a button may heal to a link, never to a textbox).                                                                                                                                       |
+| `opposite_action`     | Its words sit in the same antonym group as the wanted words but share none (submit/cancel, add/remove, pay/refund, login/logout, and others). Embeddings rate these pairs as similar, so this is a lexical guard. |
+| `moved_far`           | A fingerprint exists and the spatial score is below `0.10`.                                                                                                                                                       |
 
 ### T3 scoring
 
 The total is a weighted average of four signals, renormalised over the signals that exist (spatial and attribute scores need a fingerprint).
 
-| Signal | Weight | Source |
-| --- | --- | --- |
-| Semantic | 0.55 | Cosine similarity from `all-MiniLM-L6-v2` |
-| Role | 0.15 | ARIA role compatibility |
-| Spatial | 0.20 | Gaussian falloff on centre distance, normalised by viewport |
-| Attributes | 0.10 | Jaccard overlap of `id`, `name`, `class`, `data-test`, `data-testid`, `type` tokens |
+| Signal     | Weight | Source                                                                              |
+| ---------- | ------ | ----------------------------------------------------------------------------------- |
+| Semantic   | 0.55   | Cosine similarity from `all-MiniLM-L6-v2`                                           |
+| Role       | 0.15   | ARIA role compatibility                                                             |
+| Spatial    | 0.20   | Gaussian falloff on centre distance, normalised by viewport                         |
+| Attributes | 0.10   | Jaccard overlap of `id`, `name`, `class`, `data-test`, `data-testid`, `type` tokens |
 
-| Setting | Default |
-| --- | --- |
-| `accept` | 0.70 |
-| `accept_high_risk` (specs with `risk="high"`) | 0.85 |
-| `min_margin` (best minus runner-up) | 0.08 |
-| `min_spatial` | 0.10 |
-| `probe_timeout_ms` | 3000 (tests use 400 for local pages) |
+| Setting                                       | Default                              |
+| --------------------------------------------- | ------------------------------------ |
+| `accept`                                      | 0.70                                 |
+| `accept_high_risk` (specs with `risk="high"`) | 0.85                                 |
+| `min_margin` (best minus runner-up)           | 0.08                                 |
+| `min_spatial`                                 | 0.10                                 |
+| `probe_timeout_ms`                            | 3000 (tests use 400 for local pages) |
 
 Use `risk="high"` for payment, delete and other destructive controls. The mock benchmark uses normal risk so its drift cases can heal at 0.70.
 
@@ -89,11 +89,11 @@ Use `risk="high"` for payment, delete and other destructive controls. The mock b
 
 `verify_after_heal(page, healer, baseline_png, name)` compares a full-page screenshot against a baseline you captured before the drift, then checks whether the healed element is covered (`document.elementFromPoint` at its centre).
 
-| Severity | Condition | Result |
-| --- | --- | --- |
-| `NONE` | SSIM at or above `0.985` and no changed regions | Pass |
-| `MINOR` | SSIM below `0.985`, or any changed region | Pass (a reworded label is a legitimate change) |
-| `MAJOR` | SSIM below `0.95`, or the screenshot sizes differ | Fail |
+| Severity | Condition                                         | Result                                         |
+| -------- | ------------------------------------------------- | ---------------------------------------------- |
+| `NONE`   | SSIM at or above `0.985` and no changed regions   | Pass                                           |
+| `MINOR`  | SSIM below `0.985`, or any changed region         | Pass (a reworded label is a legitimate change) |
+| `MAJOR`  | SSIM below `0.95`, or the screenshot sizes differ | Fail                                           |
 
 The gate also fails if the healed element is occluded. It is an explicit call: `locate()` does not invoke it, so you decide where to use it. SSIM is used instead of a raw pixel diff because it tolerates rendering noise: a unit test adds ±1 noise so that over half of the pixels differ, and SSIM stays above 0.97.
 
@@ -101,17 +101,17 @@ The gate also fails if the healed element is occluded. It is an explicit call: `
 
 Seeded synthetic benchmark, `python -m benchmarks.run_benchmark --n 60 --seed 99`. Each case learns a fingerprint on a baseline checkout page, then loads a randomly mutated version (new id, new class, reworded label, deeper wrapping, reordered siblings, `<button>` changed to `<a role="button">`).
 
-| Metric | Healing on | Healing off |
-| --- | --- | --- |
-| Drift cases | 60 | 60 |
-| Heal success rate | **91.67%** (55 / 60) | 0.00% |
-| Wrong heals | **0** | n/a |
-| False refusals | 5 | n/a |
-| Broken locators | 0 | 60 |
-| False heals on negative controls | **0** (of 2) | 0 |
-| Tier split of correct heals | T2: 41, T3: 14 | n/a |
-| Median heal latency | 321.13 ms | n/a |
-| p95 heal latency | 331.21 ms | n/a |
+| Metric                           | Healing on           | Healing off |
+| -------------------------------- | -------------------- | ----------- |
+| Drift cases                      | 60                   | 60          |
+| Heal success rate                | **91.67%** (55 / 60) | 0.00%       |
+| Wrong heals                      | **0**                | n/a         |
+| False refusals                   | 5                    | n/a         |
+| Broken locators                  | 0                    | 60          |
+| False heals on negative controls | **0** (of 2)         | 0           |
+| Tier split of correct heals      | T2: 41, T3: 14       | n/a         |
+| Median heal latency              | 321.13 ms            | n/a         |
+| p95 heal latency                 | 331.21 ms            | n/a         |
 
 **Reading these numbers honestly**
 
@@ -150,7 +150,7 @@ python -m benchmarks.run_benchmark --n 60 --seed 99                # healing on
 python -m benchmarks.run_benchmark --n 60 --seed 99 --heal off     # healing off
 ```
 
-Benchmark output is written to `reports/benchmark.json` and `reports/benchmark.md`. Optional live tests against [SauceDemo](https://www.saucedemo.com/) run with `pytest -m live -q`.
+Benchmark output is written to `reports/benchmark.json` and `reports/benchmark.md`, and `pytest` writes a self-contained HTML report with heal telemetry and embedded visual diffs to `reports/report.html` (when `pytest-html` is installed). Optional live tests against [SauceDemo](https://www.saucedemo.com/) run with `pytest -m live -q`.
 
 ## Usage
 
@@ -233,9 +233,10 @@ core/
   scoring.py         pure scoring functions and hard gates (no browser, no model)
   dom_extractor.py   single-call JS extraction of interactive elements
   healer.py          SelfHealingLocator, HealingRefused
-  vision_diff.py     SSIM, contour boxes, occlusion check
+  vision_diff.py     SSIM, contour boxes, 3-panel diff PNG, occlusion check
   visual_gate.py     verify_after_heal()
   audit.py           JSONL log, Markdown summary, heal-budget CLI
+  report_ui.py       pytest-html styling, KPI summary and inline visual diff cards
 pages/               BasePage, SauceDemo and mock checkout page objects
 mockbench/           offline checkout page with 6 drift and 2 negative mutations
 benchmarks/          seeded benchmark runner
@@ -246,12 +247,12 @@ docs/                SPEC.md and images
 
 ## Testing and CI
 
-| Marker | Suite | Needs |
-| --- | --- | --- |
-| `unit` | Scoring, gates and audit log | No browser, no model |
-| `heal` | 6 drift cases must heal, 2 negative controls must refuse | Chromium, MiniLM |
-| `visual` | SSIM, overlay and occlusion detection, heal-then-verify | Chromium |
-| `live` | SauceDemo login flows | Internet |
+| Marker   | Suite                                                    | Needs                |
+| -------- | -------------------------------------------------------- | -------------------- |
+| `unit`   | Scoring, gates and audit log                             | No browser, no model |
+| `heal`   | 6 drift cases must heal, 2 negative controls must refuse | Chromium, MiniLM     |
+| `visual` | SSIM, overlay and occlusion detection, heal-then-verify  | Chromium             |
+| `live`   | SauceDemo login flows                                    | Internet             |
 
 GitHub Actions runs on every push to `main`, every pull request and on manual dispatch: ruff, the offline suite, the heal-budget gate, a 40-case benchmark with seed 99, and uploads `reports/` as an artifact. The MiniLM model is cached between runs. `ruff` also bans `time.sleep` (rule `TID251`), so tests must use Playwright's auto-waiting.
 
