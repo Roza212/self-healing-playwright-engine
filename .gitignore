@@ -3,17 +3,10 @@ reports/
 __pycache__/
 .pytest_cache/
 .env
-CHANGELOG.md
+
+# local-only docs, not committed
+*_explained.md
+*_EXPLAINED.md
 COMMANDS_USED.md
 FILE_GUIDE.md
-phase_0_explained.md
-phase_1_explained.md
-phase_2_explained.md
-PHASE_2_EXPLAINED.md
-phase_3_explained.md
-PHASE_3_EXPLAINED.md
-phase_4_explained.md
-phase_5_explained.md
-phase_6_explained.md
-
-
+CHANGELOG.md
