@@ -9,8 +9,7 @@
 
 ## Demo
 
-<!-- TODO: terminal GIF of id_renamed heal, text_reworded heal,
-element_removed + decoy_far refuse, overlay visual-gate fail -->
+![Self-healing Playwright engine demo](docs/img/demo.gif)
 
 _Demo sequence: `id_renamed` heals at Tier 2, `text_reworded` heals at Tier 3, `element_removed` and `decoy_far` refuse safely, and `overlay` fails the post-heal visual gate._
 
