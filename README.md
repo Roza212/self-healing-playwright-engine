@@ -1,11 +1,18 @@
 # Self-Healing Playwright Engine
 
-[![CI](https://github.com/Roza212/self-healing-playwright-engine/actions/workflows/test.yml/badge.svg)](https://github.com/Roza212/self-healing-playwright-engine/actions/workflows/test.yml)
+![CI](https://github.com/Roza212/self-healing-playwright-engine/actions/workflows/test.yml/badge.svg)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Playwright](https://img.shields.io/badge/playwright-sync%20API-2EAD33)
 ![Lint: ruff](https://img.shields.io/badge/lint-ruff-261230)
 
-**A self-healing locator engine for Playwright (Python) that recovers from UI drift, and refuses to guess when an element is genuinely gone.**
+**Three-tier self-healing Playwright locator (CSS primary -> exact ARIA -> MiniLM semantic + spatial) with safety gates, an SSIM visual check, and CI.**
+
+## Demo
+
+<!-- TODO: terminal GIF of id_renamed heal, text_reworded heal,
+element_removed + decoy_far refuse, overlay visual-gate fail -->
+
+_Demo sequence: `id_renamed` heals at Tier 2, `text_reworded` heals at Tier 3, `element_removed` and `decoy_far` refuse safely, and `overlay` fails the post-heal visual gate._
 
 When a selector breaks, most "self-healing" tools pick the closest-looking element and keep going. That can turn a failing test into a passing one that clicks the wrong button. This engine heals only when a candidate clears a set of hard safety gates and a confidence threshold. Otherwise it fails the test and shows you the top candidates it rejected.
 
@@ -15,12 +22,9 @@ When a selector breaks, most "self-healing" tools pick the closest-looking eleme
 - **Audit trail.** Every heal and refusal is written to JSONL, summarized in Markdown, and can fail CI when heals exceed a budget.
 - **Local and free.** No LLM or paid API calls. The engine makes no network requests of its own; the MiniLM model is downloaded once and cached.
 
-![Overlay diff produced by the visual gate](docs/img/overlay_diff.png)
-
-_Visual gate output for a covered checkout form (`SSIM = 0.8105`, `MAJOR`). Left: baseline. Centre: current page with changed regions boxed in red. Right: rose-to-crimson SSIM difference map over the baseline wireframe._
-
 ## Contents
 
+- [Demo](#demo)
 - [How it works](#how-it-works)
 - [Results](#results)
 - [Quick start](#quick-start)
@@ -97,6 +101,10 @@ Use `risk="high"` for payment, delete and other destructive controls. The mock b
 
 The gate also fails if the healed element is occluded. It is an explicit call: `locate()` does not invoke it, so you decide where to use it. SSIM is used instead of a raw pixel diff because it tolerates rendering noise: a unit test adds ±1 noise so that over half of the pixels differ, and SSIM stays above 0.97.
 
+![Overlay diff produced by the visual gate](docs/img/overlay_diff.png)
+
+_Visual gate output for a covered checkout form (`SSIM = 0.8105`, `MAJOR`). Left: baseline. Centre: current page with changed regions boxed in red. Right: rose-to-crimson SSIM difference map over the baseline wireframe._
+
 ## Results
 
 Seeded synthetic benchmark, `python -m benchmarks.run_benchmark --n 60 --seed 99`. Each case learns a fingerprint on a baseline checkout page, then loads a randomly mutated version (new id, new class, reworded label, deeper wrapping, reordered siblings, `<button>` changed to `<a role="button">`).
@@ -112,6 +120,8 @@ Seeded synthetic benchmark, `python -m benchmarks.run_benchmark --n 60 --seed 99
 | Tier split of correct heals      | T2: 41, T3: 14       | n/a         |
 | Median heal latency              | 321.13 ms            | n/a         |
 | p95 heal latency                 | 331.21 ms            | n/a         |
+
+The 5 false refusals are heavy rewordings (e.g. "Place Order") and are the deliberate safe-failure tradeoff -- the engine refuses rather than risk a wrong heal, which is why `wrong_heals` and `false_heals_on_negatives` stay 0.
 
 **Reading these numbers honestly**
 
