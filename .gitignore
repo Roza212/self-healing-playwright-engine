@@ -4,9 +4,7 @@ __pycache__/
 .pytest_cache/
 .env
 
-# local-only docs, not committed
-*_explained.md
-*_EXPLAINED.md
-COMMANDS_USED.md
-FILE_GUIDE.md
+*_ok.md
+commands.md
+guide.md
 CHANGELOG.md
