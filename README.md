@@ -1,6 +1,7 @@
 # Self-Healing Playwright Engine
 
 ![CI](https://github.com/Roza212/self-healing-playwright-engine/actions/workflows/test.yml/badge.svg)
+[![Live Report](https://img.shields.io/badge/live-report-brightgreen)](https://roza212.github.io/self-healing-playwright-engine/)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Playwright](https://img.shields.io/badge/playwright-sync%20API-2EAD33)
 ![Lint: ruff](https://img.shields.io/badge/lint-ruff-261230)
